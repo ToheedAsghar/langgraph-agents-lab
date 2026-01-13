@@ -1,15 +1,62 @@
 import streamlit as st
+import uuid # to create unique thread ids
 from chatbot_backend import chatbot
 from langchain_core.messages import HumanMessage
 
-# session state to store messages
-    
+### -- utility functions --- ###
+
+def generate_thread_id():
+    return str(uuid.uuid4())
+
+def reset_chat():
+    thread_id = generate_thread_id()
+    st.session_state['thread_id'] = thread_id
+    st.session_state['chat_threads'].append(thread_id)
+    st.session_state['messages'] = []
+
+def add_thread(thread_id):
+    if thread_id not in st.session_state['chat_threads']:
+        st.session_state['chat_threads'].append(thread_id)
+
+def load_thread(thread_id):
+    return chatbot.get_state(config={
+        'configurable': {'thread_id': thread_id}
+    }).values['messages']
+
+# -- session state to store messages
+
+if 'chat_threads' not in st.session_state:
+    st.session_state['chat_threads'] = []
+
 if 'messages' not in st.session_state:
     st.session_state['messages'] = []
 
+if 'thread_id' not in st.session_state:
+    st.session_state['thread_id'] = generate_thread_id()
+
+## -- SIDEBAR UI -- #
+
+st.sidebar.title("Chat-LLM")
+st.sidebar.button("New Chat", on_click=reset_chat)
+st.sidebar.header("New Conversation")
+for id in st.session_state['chat_threads'][::-1]:
+    # st.sidebar.button(f"Thread: {id[:8]}", on_click=load_thread, args=(id))
+    if st.sidebar.button(id):
+        msgs = load_thread(id)
+        st.session_state['thread_id'] = id
+
+        tmp_msgs = []
+        for msg in msgs:
+            if isinstance(msg, HumanMessage):
+                role = "user"
+            else:
+                role = "assistant"
+            tmp_msgs.append({"role": role, "content": msg.content})
+        st.session_state['messages'] = tmp_msgs
+
 CONFIG = {
     'configurable': {
-        'thread_id': '123'
+        'thread_id': st.session_state['thread_id']
     }
 }
 
