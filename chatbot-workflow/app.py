@@ -13,7 +13,6 @@ CONFIG = {
     }
 }
 
-
 # loading the conversation history
 for message in st.session_state['messages']:
     with st.chat_message(message["role"]):
@@ -28,10 +27,20 @@ if user_input:
     with st.chat_message("user"): # role is user
         st.text(user_input)
 
-    res = chatbot.invoke({
-        'messages': [HumanMessage(content=user_input)]
-    }, config=CONFIG)
+    # res = chatbot.invoke({
+    #     'messages': [HumanMessage(content=user_input)]
+    # }, config=CONFIG)
 
-    st.session_state['messages'].append({"role": "assistant", "content": res['messages'][-1].content})
+    #st.session_state['messages'].append({"role": "assistant", "content": res['messages'][-1].content})
     with st.chat_message("assistant"): # role is assistant
-        st.text(res['messages'][-1].content)
+        ai_msg = st.write_stream(
+            chunk.content for chunk, meta_data in chatbot.stream(
+            {'messages': [HumanMessage(content=user_input)]},
+            stream_mode='messages',
+            config=CONFIG
+            )
+        )
+
+    st.session_state['messages'].append(
+        {"role": "assistant", "content": ai_msg}
+    )

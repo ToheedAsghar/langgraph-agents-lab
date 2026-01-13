@@ -52,29 +52,28 @@ graph.add_edge("chat_node", END)
 # compile
 chatbot = graph.compile(checkpointer=checkpointer)
 
-if __name__ == "__main__":
-    flag: bool = True
-    thread_id = 1
-    while flag:
-        usr_msg = input("USER\t>")
+# if __name__ == "__main__":
+#     flag: bool = True
+#     thread_id = 1
+#     while flag:
+#         usr_msg = input("USER\t>")
 
-        if usr_msg.strip().lower() in ['exit', 'quit', 'bye']:
-            flag = False
-            print("Exited.")
-            continue
+#         if usr_msg.strip().lower() in ['exit', 'quit', 'bye']:
+#             flag = False
+#             print("Exited.")
+#             continue
 
-        print('USER\t:', usr_msg)
+#         print('USER\t:', usr_msg)
 
-        config = {
-            'configurable': {
-                'thread_id': thread_id
-            }
-        }
+#         config = {
+#             'configurable': {
+#                 'thread_id': thread_id
+#             }
+#         }
 
-        res = chatbot.invoke({
-            'messages': [HumanMessage(content=usr_msg)]
-        }, config=config)
+#         # newline after streaming completes
 
-        print('STELLA\t:', res['messages'][-1].content)
+#         # res = chatbot.invoke({
+#         #     'messages': [HumanMessage(content=usr_msg)]
+#         # }, config=config)
 
-    chatbot.get_state(config=config)
