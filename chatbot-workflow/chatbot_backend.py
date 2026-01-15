@@ -15,6 +15,7 @@ from langgraph.graph.message import add_messages
 
 class State(TypedDict):
     messages: Annotated[list[BaseMessage], add_messages] # langgraph builtin function
+
 llm = ChatOpenAI(
     model="openai/gpt-4o-mini",
     base_url="https://openrouter.ai/api/v1",
@@ -39,6 +40,15 @@ def chat_node(state: State):
         'messages': [res]
     }
 
+
+def name_chat(state: State):
+    messages = state["messages"]
+    # extract first user message
+    for msg in messages:
+        if isinstance(msg, HumanMessage):
+            first_user_msg = msg.content
+            break
+
 checkpointer = MemorySaver()
 graph = StateGraph(State)
 
@@ -52,28 +62,14 @@ graph.add_edge("chat_node", END)
 # compile
 chatbot = graph.compile(checkpointer=checkpointer)
 
-# if __name__ == "__main__":
-#     flag: bool = True
-#     thread_id = 1
-#     while flag:
-#         usr_msg = input("USER\t>")
+def generate_thread_topic(first_message: str) -> str:
+    """Generate a short topic/title for the thread based on the first human message."""
+    prompt = f"""Generate a very short topic title (3-6 words max) for a conversation that starts with this message. 
+    Return ONLY the title, no quotes, no explanation.
 
-#         if usr_msg.strip().lower() in ['exit', 'quit', 'bye']:
-#             flag = False
-#             print("Exited.")
-#             continue
+    Message: {first_message}
 
-#         print('USER\t:', usr_msg)
-
-#         config = {
-#             'configurable': {
-#                 'thread_id': thread_id
-#             }
-#         }
-
-#         # newline after streaming completes
-
-#         # res = chatbot.invoke({
-#         #     'messages': [HumanMessage(content=usr_msg)]
-#         # }, config=config)
-
+    Title:"""
+    
+    response = llm.invoke([HumanMessage(content=prompt)])
+    return response.content.strip()
